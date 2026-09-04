@@ -17,6 +17,7 @@ import { OcrModule } from './ocr/ocr.module.js';
 import { QueuesModule } from './queues/queues.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { CommonModule } from './common/common.module.js';
+import { PrismaModule } from './prisma/prisma.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 

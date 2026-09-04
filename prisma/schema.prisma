@@ -1,0 +1,284 @@
+generator client {
+  provider  = "prisma-client-js"
+}
+datasource db {
+  provider  = "postgresql"
+}
+
+enum GroupRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum ResourceSourceType {
+  USER_UPLOAD
+  GROUP
+  AI_GENERATED
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  SHORT_ANSWER
+}
+
+enum NotificationType {
+  ADDED_TO_GROUP
+  REMOVED_FROM_GROUP
+  NEW_QUIZ
+  MESSAGE_REPLY
+  MENTION
+  NEW_RESOURCE
+  QUIZ_RESULT
+  ASSIGNMENT_REMINDER
+}
+
+model User {
+  id                     Int       @id @default(autoincrement())
+  firstName              String
+  lastName               String
+  email                  String    @unique
+  password               String
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  otp                    String?
+  otpExpiry              DateTime?
+  isVerified             Boolean   @default(false)
+  passwordResetOTP       String?
+  passwordResetOTPExpiry DateTime?
+
+  refreshToken           RefreshToken[]
+  memberships            StudyGroupMember[]
+  messages               Message[]
+  uploadedResources      Resource[] @relation("ResourceUploader")
+  savedResources         ResourceReference[]
+  createdQuizzes         Quiz[]     @relation("QuizCreator")
+  quizAttempts           QuizAttempt[]
+  notifications           Notification[]
+
+  @@map("users") 
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model StudyGroup {
+  id          Int                 @id @default(autoincrement())
+  name        String
+  description String?
+  course      String?
+  inviteCode  String              @unique @default(cuid())
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  members     StudyGroupMember[]
+  resources   ResourceGroup[]     
+  quizzes     Quiz[]      
+  messages    Message[] 
+
+  @@map("study_groups")
+}
+
+model StudyGroupMember {
+  id          Int        @id @default(autoincrement())
+  userId      Int
+  groupId     Int
+  role        GroupRole  @default(MEMBER)
+  joinedAt    DateTime   @default(now())
+
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group       StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
+  @@index([groupId])
+  @@map("study_group_members")
+}
+
+model Message {
+  id          Int        @id @default(autoincrement())
+  content     String
+  senderId    Int
+  groupId     Int
+  replyToId   Int?
+  deletedAt   DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  sender      User       @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  group       StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  replyTo     Message?   @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies     Message[]  @relation("MessageReplies")
+
+  @@index([groupId, createdAt])
+  @@map("messages")
+}
+
+model Resource {
+  id          Int                 @id @default(autoincrement())
+  title       String
+  description String?
+  fileName    String
+  mimeType    String
+  sizeBytes   Int
+  storageKey  String              @unique
+  sourceType  ResourceSourceType  @default(USER_UPLOAD)
+  course      String?
+  uploaderId  Int
+  createdAt   DateTime            @default(now())
+  deletedAt   DateTime?
+
+  uploader    User                @relation("ResourceUploader", fields: [uploaderId], references: [id], onDelete: Restrict)
+  groupLinks  ResourceGroup[]
+  savedBy     ResourceReference[]
+
+  @@index([uploaderId])
+  @@map("resources")
+}
+
+model ResourceGroup {
+  id          Int                 @id @default(autoincrement())
+  resourceId  Int
+  groupId     Int
+  linkedAt    DateTime            @default(now())
+
+  group       StudyGroup          @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  resources   Resource            @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([groupId])
+  @@unique([resourceId, groupId])
+  @@map("resource_groups")
+}
+
+model ResourceReference {
+  id          Int                 @id @default(autoincrement())
+  userId      Int
+  resourceId  Int
+  savedAt     DateTime            @default(now())
+
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource    Resource            @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@unique([userId, resourceId])
+  @@map("resource_references")
+}
+
+model Quiz {
+  id          Int                 @id @default(autoincrement())
+  title       String
+  description String?
+  course      String?
+  creatorId   Int
+  groupId     Int
+  timeLimit   Int?                
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  creator     User                @relation("QuizCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  group       StudyGroup?         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  questions   Question[]
+  attempts    QuizAttempt[]
+
+  @@index([groupId])
+  @@map("quizzes")
+}
+
+model Question {
+  id          Int                 @id @default(autoincrement())
+  quizId      Int
+  text        String
+  type        QuestionType
+  explanation String?        
+  correctAnswer String?     
+  order       Int                 @default(0)      
+  createdAt   DateTime            @default(now())
+
+  quiz        Quiz                @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  options     QuizOption[]
+  answers     QuizAnswer[]
+
+  @@index([quizId])
+  @@map("questions")
+}
+
+model QuizOption {
+  id          Int                 @id @default(autoincrement())
+  questionId  Int
+  text        String
+  isCorrect   Boolean             @default(false)
+  order       Int                 @default(0)      
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  question    Question            @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answers     QuizAnswer[]        @relation("SelectedOption")
+
+  @@index([questionId])
+  @@map("quiz_options")
+}
+
+model QuizAnswer {
+  id          Int                 @id @default(autoincrement())
+  questionId  Int
+  attemptId      Int
+  selectedOptionId Int?           
+  answerText  String?  
+  isCorrect   Boolean?                     
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  question    Question            @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedOption QuizOption?      @relation("SelectedOption", fields: [selectedOptionId], references: [id], onDelete: SetNull)
+  attempt    QuizAttempt          @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+  @@unique([questionId, attemptId])
+  @@index([attemptId])
+  @@map("quiz_answers")
+}
+
+model QuizAttempt {
+  id          Int                 @id @default(autoincrement())
+  quizId      Int
+  userId      Int
+  score       Float?              
+  startedAt   DateTime            @default(now())
+  completedAt DateTime?           
+
+  quiz        Quiz                @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers     QuizAnswer[]
+
+  @@index([quizId])
+  @@index([userId])
+  @@unique([quizId, userId])
+  @@map("quiz_attempts")
+}
+
+model Notification {
+  id          Int                 @id @default(autoincrement())
+  userId      Int
+  type        NotificationType
+  title       String
+  message     String?
+  isRead      Boolean             @default(false)
+  readAt      DateTime?
+  metadata    Json?
+  createdAt   DateTime            @default(now())
+
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("notifications")
+}
