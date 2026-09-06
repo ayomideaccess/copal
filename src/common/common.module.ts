@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common';
-import { CommonController } from './common.controller.js';
-import { CommonService } from './common.service.js';
+import { EmailService } from './email.service.js';
 
 @Module({
-  controllers: [CommonController],
-  providers: [CommonService]
+  providers: [EmailService],
+  exports: [EmailService],
 })
 export class CommonModule {}
