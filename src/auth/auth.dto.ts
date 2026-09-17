@@ -21,6 +21,7 @@ export class ForgotDto {
 
 export class ResetDto {
   email: string;
+  passwordResetOTP: string;
   password: string;
 }
 

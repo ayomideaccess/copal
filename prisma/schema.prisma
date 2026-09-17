@@ -20,7 +20,6 @@ enum ResourceSourceType {
 enum QuestionType {
   MULTIPLE_CHOICE
   TRUE_FALSE
-  SHORT_ANSWER
 }
 
 enum NotificationType {
@@ -96,6 +95,7 @@ model StudyGroupMember {
   groupId     Int
   role        GroupRole  @default(MEMBER)
   joinedAt    DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   group       StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)

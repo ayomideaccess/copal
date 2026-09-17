@@ -125,7 +125,7 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    const passwordResetOTP = generateOTP();
+    const passwordResetOtp = generateOTP();
 
     const passResetOTPExpires = new Date(
       Date.now() + 10 * 60 * 1000
@@ -136,12 +136,12 @@ export class AuthService {
         id: user.id,
       },
       data: {
-        passwordResetOTP: hashOTP(passwordResetOTP),
+        passwordResetOTP: hashOTP(passwordResetOtp),
         passwordResetOTPExpiry: passResetOTPExpires,
       },
     });
 
-    await this.emailService.sendPasswordResetEmail(dto.email, passwordResetOTP);
+    await this.emailService.sendPasswordResetEmail(dto.email, passwordResetOtp);
 
     return {
         message: 'Password reset email sent. Check your email for OTP.',
@@ -157,12 +157,23 @@ export class AuthService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
+    if (!user.passwordResetOTP || !user.passwordResetOTPExpiry) {
+      throw new BadRequestException('No password reset request found');
+    }
+    if (user.passwordResetOTP !== hashOTP(dto.passwordResetOTP)) {
+      throw new BadRequestException('Invalid OTP');
+    }
+    if (new Date(user.passwordResetOTPExpiry) < new Date()) {
+      throw new BadRequestException('OTP expired');
+    }
     await this.prisma.user.update({
       where: {
         id: user.id,
       },
       data: {
         password: await bcrypt.hash(dto.password, 10),
+        passwordResetOTP: null,
+        passwordResetOTPExpiry: null,
       },
     });
     return {
