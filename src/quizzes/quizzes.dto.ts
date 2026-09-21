@@ -1,6 +1,6 @@
 import { QuestionType } from '@prisma/client';
 
-export class CreateQuizOptionDto {
+ export class CreateQuizOptionDto {
   text: string;
   isCorrect?: boolean;
   order?: number;
@@ -40,3 +40,4 @@ export class SubmitAnswerDto {
 export class SubmitQuizDto {
   answers: SubmitAnswerDto[];
 }
+
