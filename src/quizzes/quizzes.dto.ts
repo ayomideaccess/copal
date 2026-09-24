@@ -41,3 +41,8 @@ export class SubmitQuizDto {
   answers: SubmitAnswerDto[];
 }
 
+export class UpdateQuizAnswerDto {
+    selectedOptionId?: number;
+    answerText?: string;
+}
+

@@ -2,7 +2,6 @@ import { BadRequestException, ConflictException, ForbiddenException, Injectable,
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateQuizDto, UpdateQuizAnswerDto, UpdateQuizDto } from './quizzes.dto.js';
 import { QuestionType } from '@prisma/client';
-import { text } from 'stream/consumers';
 
 @Injectable()
 export class QuizzesService {
