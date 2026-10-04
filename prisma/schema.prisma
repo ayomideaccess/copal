@@ -30,7 +30,7 @@ enum NotificationType {
   MENTION
   NEW_RESOURCE
   QUIZ_RESULT
-  ASSIGNMENT_REMINDER
+  QUIZ_REMINDER
 }
 
 model User {
@@ -184,6 +184,7 @@ model Quiz {
   timeLimit   Int?                
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
+  dueDate     DateTime? 
 
   creator     User                @relation("QuizCreator", fields: [creatorId], references: [id], onDelete: Cascade)
   group       StudyGroup?         @relation(fields: [groupId], references: [id], onDelete: Cascade)
@@ -276,6 +277,7 @@ model Notification {
   readAt      DateTime?
   metadata    Json?
   createdAt   DateTime            @default(now())
+  dedupeKey   String? @unique
 
   user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 

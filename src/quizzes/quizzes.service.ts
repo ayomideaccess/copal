@@ -50,6 +50,7 @@ export class QuizzesService {
                 timeLimit: dto.timeLimit,
                 creatorId: userId,
                 groupId: groupId,
+                dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
             },
             });
 

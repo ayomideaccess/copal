@@ -1,4 +1,5 @@
 import { QuestionType } from '@prisma/client';
+import { IsOptional,IsDateString } from 'class-validator';
 
  export class CreateQuizOptionDto {
   text: string;
@@ -22,6 +23,9 @@ export class CreateQuizDto {
   groupId: number;
   timeLimit?: number;
   questions: CreateQuestionDto[];
+  @IsOptional()
+  @IsDateString()
+  dueDate?: string;
 }
 
 export class UpdateQuizDto {
@@ -29,6 +33,9 @@ export class UpdateQuizDto {
   description?: string;
   course?: string;
   timeLimit?: number;
+  @IsOptional()
+  @IsDateString()
+  dueDate?: string;
 }
 
 export class SubmitAnswerDto {
@@ -45,4 +52,5 @@ export class UpdateQuizAnswerDto {
     selectedOptionId?: number;
     answerText?: string;
 }
+
 
